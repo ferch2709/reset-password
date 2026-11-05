@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperar Contraseña - FakeWhatsApp</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+  <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md text-center border-t-8 border-[#075E54]">
+    <h1 class="text-3xl font-bold text-[#075E54] mb-1">FakeWhatsApp</h1>
+    <h2 class="text-gray-500 font-medium mb-6">Restablecer tu contraseña</h2>
+    
+    <div id="form-container">
+      <input type="password" id="new-password" placeholder="Nueva contraseña (mínimo 6 caracteres)" 
+             class="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-[#25D366]">
+      <button onclick="cambiarPassword()" id="btn-submit"
+              class="w-full bg-[#25D366] text-white font-bold py-3 rounded-lg hover:bg-[#20b859] transition shadow">
+        Guardar nueva contraseña
+      </button>
+    </div>
+
+    <p id="status-msg" class="mt-4 text-sm font-semibold hidden"></p>
+  </div>
+
+  <script>
+    // Extrae el token que Supabase envía en el enlace
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get('access_token');
+
+    const SUPABASE_URL = "https://fvokfkgytthyegpaifqr.supabase.co/";
+    const SUPABASE_KEY = "sb_publishable_AR12hhePIg_6aZFnUWy2hw_Z40AbUmF";
+
+    const statusMsg = document.getElementById('status-msg');
+
+    if (!accessToken) {
+      statusMsg.innerText = "El enlace no es válido o ya caducó. Solicita uno nuevo desde la app.";
+      statusMsg.className = "mt-4 text-sm font-semibold text-red-500 block";
+      document.getElementById('form-container').style.display = "none";
+    }
+
+    async function cambiarPassword() {
+      const password = document.getElementById('new-password').value.trim();
+      const btn = document.getElementById('btn-submit');
+
+      if (password.length < 6) {
+        alert("La contraseña debe tener al menos 6 caracteres");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Guardando contraseña...";
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}auth/v1/user`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'apikey': SUPABASE_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ password: password })
+        });
+
+        if (response.ok) {
+          document.getElementById('form-container').innerHTML = `
+            <div class="text-green-600 font-bold text-xl mb-2">¡Contraseña cambiada con éxito!</div>
+            <p class="text-gray-600 text-sm">Ya puedes abrir FakeWhatsApp en tu celular e iniciar sesión con tu nueva contraseña.</p>
+          `;
+        } else {
+          statusMsg.innerText = "Error al actualizar. Solicita un nuevo correo.";
+          statusMsg.className = "mt-4 text-sm font-semibold text-red-500 block";
+          btn.disabled = false;
+          btn.innerText = "Guardar nueva contraseña";
+        }
+      } catch (err) {
+        statusMsg.innerText = "Error de conexión.";
+        statusMsg.className = "mt-4 text-sm font-semibold text-red-500 block";
+        btn.disabled = false;
+        btn.innerText = "Guardar nueva contraseña";
+      }
+    }
+  </script>
+</body>
+</html>
